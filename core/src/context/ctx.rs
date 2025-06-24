@@ -138,6 +138,10 @@ impl<'js> Ctx<'js> {
         }
     }
 
+    pub fn seed_rng(&self, seed: u64) {
+        unsafe { qjs::JS_RandomInit(self.as_ptr(), seed) };
+    }
+
     pub(crate) unsafe fn eval_raw<S: Into<Vec<u8>>>(
         &self,
         source: S,
@@ -616,6 +620,19 @@ mod test {
 
             assert_eq!("bar".to_string(), res);
         })
+    }
+
+    #[test]
+    fn seed_rng() {
+        use crate::{Context, Runtime};
+
+        let runtime = Runtime::new().unwrap();
+        let ctx = Context::full(&runtime).unwrap();
+        ctx.with(|ctx| {
+            ctx.seed_rng(1);
+            let x: f64 = ctx.eval("Math.random()").unwrap();
+            assert_eq!(x, 0.28083505005035936);
+        });
     }
 
     #[test]
