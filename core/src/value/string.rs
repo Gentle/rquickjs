@@ -182,4 +182,62 @@ mod test {
             assert_eq!(text, "foobar".to_string());
         });
     }
+
+    /// Rope strings are an internal QuickJS optimization where concatenated strings
+    /// are stored as a tree of segments rather than being flattened immediately.
+    /// QuickJS only creates rope strings when the left operand exceeds 8KB.
+    /// Before the rope string fix, these would not be recognized as strings by
+    /// `is_string()`, `type_of()`, or `String::from_value()`.
+    #[test]
+    fn rope_string_is_string() {
+        test_with(|ctx| {
+            // Concatenating onto a string >8KB triggers JS_TAG_STRING_ROPE in QuickJS.
+            let val: Value = ctx
+                .eval(
+                    r#"
+                    var s = "a".repeat(10000);
+                    s + "b"
+                "#,
+                )
+                .unwrap();
+            assert!(val.is_string(), "rope string should be recognized as a string");
+            assert_eq!(val.type_of(), Type::String);
+            assert_eq!(val.type_name(), "string");
+        });
+    }
+
+    #[test]
+    fn rope_string_to_rust_string() {
+        test_with(|ctx| {
+            let s: String = ctx
+                .eval(
+                    r#"
+                    var s = "x".repeat(10000);
+                    s + "hello"
+                "#,
+                )
+                .unwrap();
+            let rust_str = s.to_string().unwrap();
+            assert_eq!(rust_str.len(), 10005);
+            assert!(rust_str.ends_with("hello"));
+        });
+    }
+
+    #[test]
+    fn rope_string_from_value() {
+        test_with(|ctx| {
+            let val: Value = ctx
+                .eval(
+                    r#"
+                    var s = "y".repeat(10000);
+                    s + "tail"
+                "#,
+                )
+                .unwrap();
+            let s = String::from_value(val).unwrap();
+            let rust_str = s.to_string().unwrap();
+            assert_eq!(rust_str.len(), 10004);
+            assert!(rust_str.ends_with("tail"));
+        });
+    }
 }
