@@ -153,6 +153,9 @@ fn main() {
     #[cfg(feature = "disable-assertions")]
     defines.push(("NDEBUG".into(), None));
 
+    #[cfg(feature = "strip-source")]
+    defines.push(("CONFIG_STRIP_SOURCE".into(), Some("1")));
+
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let target_env = env::var("CARGO_CFG_TARGET_ENV").unwrap();
 

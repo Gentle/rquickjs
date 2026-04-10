@@ -122,6 +122,11 @@ dump-read-object = ["rquickjs-core/dump-read-object"]
 # Disable QuickJS assertions for faster performance
 disable-assertions = ["rquickjs-core/disable-assertions"]
 
+# Don't store function source text in bytecode.
+# Function.prototype.toString() returns "[native code]" instead.
+# Reduces memory in wizer snapshots.
+strip-source = ["rquickjs-core/strip-source"]
+
 # Enable compilation tests
 compile-tests = ["rquickjs-core/compile-tests"]
 
