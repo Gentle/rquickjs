@@ -243,6 +243,20 @@ fn main() {
         bindgen_cflags,
     );
 
+    // External-QuickJS mode: when RQUICKJS_EXTERN_QUICKJS names a directory
+    // containing a `libquickjs.so`, do NOT statically compile QuickJS into this
+    // crate. Instead link it as an external shared library, so the `JS_*` C-API
+    // symbols become wasm imports resolved at compose time from a shared QuickJS
+    // side-module core — exactly as the warts Python guest imports `Py_*` from
+    // `libpython3.14.so`. The default path (var unset) still statically compiles.
+    // (bindings are still generated above, so the Rust API is unchanged.)
+    println!("cargo:rerun-if-env-changed=RQUICKJS_EXTERN_QUICKJS");
+    if let Ok(dir) = env::var("RQUICKJS_EXTERN_QUICKJS") {
+        println!("cargo:rustc-link-search=native={dir}");
+        println!("cargo:rustc-link-lib=dylib=quickjs");
+        return;
+    }
+
     for (name, value) in &defines {
         builder.define(name, *value);
     }
