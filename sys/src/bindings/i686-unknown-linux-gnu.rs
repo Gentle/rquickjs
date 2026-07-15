@@ -301,6 +301,9 @@ unsafe extern "C" {
     pub fn JS_GetFunctionProto(ctx: *mut JSContext) -> JSValue;
 }
 unsafe extern "C" {
+    pub fn JS_RandomInit(ctx: *mut JSContext, seed: u64);
+}
+unsafe extern "C" {
     pub fn JS_NewContextRaw(rt: *mut JSRuntime) -> *mut JSContext;
 }
 unsafe extern "C" {
