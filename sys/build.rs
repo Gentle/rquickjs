@@ -250,11 +250,21 @@ fn main() {
     // side-module core — exactly as the warts Python guest imports `Py_*` from
     // `libpython3.14.so`. The default path (var unset) still statically compiles.
     // (bindings are still generated above, so the Rust API is unchanged.)
+    //
+    // GATED on `target_os == "wasi"`: the env var is a *process*-wide setting during
+    // the wasm guest build, so without this gate it also leaks into HOST builds of
+    // `rquickjs-sys` (pulled in for the host by the `rquickjs-macro` proc-macro when
+    // the `macro` feature is on). A host build then links `-lquickjs` against the wasm
+    // `libquickjs.so` → wrong-arch → undefined `_js_free` at link. Extern mode only
+    // makes sense for the wasm side-module compose, so restrict it to wasi; host
+    // builds always statically compile `libquickjs.a`.
     println!("cargo:rerun-if-env-changed=RQUICKJS_EXTERN_QUICKJS");
-    if let Ok(dir) = env::var("RQUICKJS_EXTERN_QUICKJS") {
-        println!("cargo:rustc-link-search=native={dir}");
-        println!("cargo:rustc-link-lib=dylib=quickjs");
-        return;
+    if target_os == "wasi" {
+        if let Ok(dir) = env::var("RQUICKJS_EXTERN_QUICKJS") {
+            println!("cargo:rustc-link-search=native={dir}");
+            println!("cargo:rustc-link-lib=dylib=quickjs");
+            return;
+        }
     }
 
     for (name, value) in &defines {
